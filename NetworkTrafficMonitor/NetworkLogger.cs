@@ -51,15 +51,40 @@ class NetworkLogger
             {
                 string jsonResponse = await response.Content.ReadAsStringAsync();
                 JObject json = JObject.Parse(jsonResponse);
-                string country = json["country"]?.ToString() ?? "Onbekend";
-                string city = json["city"]?.ToString() ?? "Onbekend";
+                string country = json["country"]?.ToString() ?? "Unknown";
+                string city = json["city"]?.ToString() ?? "Unknown";
+                string lat = json["lat"]?.ToString() ?? "";
+                string lon = json["lon"]?.ToString() ?? "";
+
+                // CSV log aanroepen
+                await LogToCsvAsync(ip, country, city, lat, lon);
+
                 return $"{country}, {city}";
             }
             return "Locatie onbekend";
         }
-        catch (Exception)
+        catch
         {
             return "Locatie niet beschikbaar";
         }
     }
+
+
+    private async Task LogToCsvAsync(string ip, string country, string city, string lat, string lon)
+    {
+        string csvPath = @"C:\Tools\NetwerkMonitorApp\network_geo_log.csv";
+        bool fileExists = File.Exists(csvPath);
+
+        using (var writer = new StreamWriter(csvPath, append: true))
+        {
+            if (!fileExists)
+            {
+                await writer.WriteLineAsync("IP,Country,City,Latitude,Longitude");
+            }
+
+            string line = $"{ip},{country},{city},{lat},{lon}";
+            await writer.WriteLineAsync(line);
+        }
+    }
+
 }
